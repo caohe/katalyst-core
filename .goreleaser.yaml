@@ -1,0 +1,20 @@
+project_name: katalyst
+env:
+  - GIT_URL=https://github.com/kubewharf/katalyst-core
+before:
+  hooks:
+    - go mod tidy
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^build:'
+      - '^ci:'
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^feat(deps):'
