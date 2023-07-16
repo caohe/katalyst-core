@@ -29,6 +29,7 @@ import (
 	"github.com/kubewharf/katalyst-core/pkg/config"
 	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/cnc"
 	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/cnr"
+	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/kubeletconfig"
 	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/metric"
 	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/node"
 	"github.com/kubewharf/katalyst-core/pkg/metaserver/agent/pod"
@@ -48,6 +49,7 @@ type MetaAgent struct {
 	metric.MetricsFetcher
 	cnr.CNRFetcher
 	cnc.CNCFetcher
+	kubeletconfig.KubeletConfigFetcher
 
 	// machine info is fetched from once and stored in meta-server
 	*machine.KatalystMachineInfo
@@ -73,7 +75,8 @@ func NewMetaAgent(conf *config.Configuration, clientSet *client.GenericClientSet
 		NodeFetcher: node.NewRemoteNodeFetcher(conf.NodeName, clientSet.KubeClient.CoreV1().Nodes()),
 		CNRFetcher: cnr.NewCachedCNRFetcher(conf.NodeName, conf.CNRCacheTTL,
 			clientSet.InternalClient.NodeV1alpha1().CustomNodeResources()),
-		KatalystMachineInfo: machineInfo,
+		KubeletConfigFetcher: kubeletconfig.NewKubeletConfigFetcher(conf, emitter),
+		KatalystMachineInfo:  machineInfo,
 	}
 
 	if conf.EnableMetricsFetcher {
@@ -113,6 +116,12 @@ func (a *MetaAgent) SetMetricFetcher(m metric.MetricsFetcher) {
 	})
 }
 
+func (a *MetaAgent) SetKubeletConfigFetcher(k kubeletconfig.KubeletConfigFetcher) {
+	a.setComponentImplementation(func() {
+		a.KubeletConfigFetcher = k
+	})
+}
+
 func (a *MetaAgent) Run(ctx context.Context) {
 	a.Lock()
 	if a.start {
@@ -123,6 +132,7 @@ func (a *MetaAgent) Run(ctx context.Context) {
 
 	go a.PodFetcher.Run(ctx)
 	go a.NodeFetcher.Run(ctx)
+	go a.KubeletConfigFetcher.Run(ctx)
 
 	if a.enableMetricsFetcher {
 		go a.MetricsFetcher.Run(ctx)
