@@ -54,7 +54,7 @@ type MetaAgent struct {
 	// machine info is fetched from once and stored in meta-server
 	*machine.KatalystMachineInfo
 
-	enableMetricsFetcher bool
+	conf *config.Configuration
 }
 
 // NewMetaAgent returns the instance of MetaAgent.
@@ -77,15 +77,20 @@ func NewMetaAgent(conf *config.Configuration, clientSet *client.GenericClientSet
 			clientSet.InternalClient.NodeV1alpha1().CustomNodeResources()),
 		KubeletConfigFetcher: kubeletconfig.NewKubeletConfigFetcher(conf, emitter),
 		KatalystMachineInfo:  machineInfo,
+		conf:                 conf,
 	}
 
 	if conf.EnableMetricsFetcher {
 		metaAgent.MetricsFetcher = metric.NewMalachiteMetricsFetcher(emitter, conf)
-		metaAgent.enableMetricsFetcher = true
+	} else {
+		metaAgent.MetricsFetcher = metric.NewFakeMetricsFetcher(emitter)
 	}
 
 	if conf.EnableCNCFetcher {
 		metaAgent.CNCFetcher = cnc.NewCachedCNCFetcher(conf.NodeName, conf.CustomNodeConfigCacheTTL,
+			clientSet.InternalClient.ConfigV1alpha1().CustomNodeConfigs())
+	} else {
+		metaAgent.CNCFetcher = cnc.NewFakeCNCFetcher(conf.NodeName, conf.CustomNodeConfigCacheTTL,
 			clientSet.InternalClient.ConfigV1alpha1().CustomNodeConfigs())
 	}
 
@@ -133,7 +138,7 @@ func (a *MetaAgent) Run(ctx context.Context) {
 	go a.PodFetcher.Run(ctx)
 	go a.NodeFetcher.Run(ctx)
 
-	if a.enableMetricsFetcher {
+	if a.conf.EnableMetricsFetcher {
 		go a.MetricsFetcher.Run(ctx)
 	}
 
