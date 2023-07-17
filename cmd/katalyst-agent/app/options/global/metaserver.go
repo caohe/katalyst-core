@@ -45,6 +45,7 @@ const (
 	defaultKubeletPodCacheSyncMaxRate   = 5
 	defaultKubeletPodCacheSyncBurstBulk = 1
 	defaultKubeletConfigURI             = "/configz"
+	defaultKubeletPodsEndpoint          = "/pods"
 	defaultAPIAuthTokenFile             = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	defaultKubeletConfigCacheSyncPeriod = 30 * time.Second
 )
@@ -74,6 +75,7 @@ type MetaServerOptions struct {
 	KubeletPodCacheSyncMaxRate   int
 	KubeletPodCacheSyncBurstBulk int
 	KubeletConfigEndpoint        string
+	KubeletPodsEndpoint          string
 	APIAuthTokenFile             string
 	KubeletConfigCacheSyncPeriod time.Duration
 
@@ -107,6 +109,7 @@ func NewMetaServerOptions() *MetaServerOptions {
 		EnableMetricsFetcher:           defaultEnableMetricsFetcher,
 		EnableCNCFetcher:               defaultEnableCNCFetcher,
 		KubeletConfigEndpoint:          defaultKubeletConfigURI,
+		KubeletPodsEndpoint:            defaultKubeletPodsEndpoint,
 		APIAuthTokenFile:               defaultAPIAuthTokenFile,
 		KubeletConfigCacheSyncPeriod:   defaultKubeletConfigCacheSyncPeriod,
 	}
@@ -154,6 +157,8 @@ func (o *MetaServerOptions) AddFlags(fss *cliflag.NamedFlagSets) {
 		"Whether to enable cnc fetcher")
 	fs.StringVar(&o.KubeletConfigEndpoint, "kubelet-config-endpoint", o.KubeletConfigEndpoint,
 		"The URI of kubelet config endpoint")
+	fs.StringVar(&o.KubeletPodsEndpoint, "kubelet-pods-endpoint", o.KubeletPodsEndpoint,
+		"The URI of kubelet pods endpoint")
 	fs.StringVar(&o.APIAuthTokenFile, "api-auth-token-file", o.APIAuthTokenFile,
 		"The path of the API auth token file")
 	fs.DurationVar(&o.KubeletConfigCacheSyncPeriod, "kubelet-config-cache-sync-period", o.KubeletConfigCacheSyncPeriod,
@@ -181,6 +186,7 @@ func (o *MetaServerOptions) ApplyTo(c *global.MetaServerConfiguration) error {
 	c.EnableMetricsFetcher = o.EnableMetricsFetcher
 	c.EnableCNCFetcher = o.EnableCNCFetcher
 	c.KubeletConfigEndpoint = o.KubeletConfigEndpoint
+	c.KubeletPodsEndpoint = o.KubeletPodsEndpoint
 	c.APIAuthTokenFile = o.APIAuthTokenFile
 	c.KubeletConfigCacheSyncPeriod = o.KubeletConfigCacheSyncPeriod
 
