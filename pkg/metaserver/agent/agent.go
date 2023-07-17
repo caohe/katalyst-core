@@ -132,7 +132,6 @@ func (a *MetaAgent) Run(ctx context.Context) {
 
 	go a.PodFetcher.Run(ctx)
 	go a.NodeFetcher.Run(ctx)
-	go a.KubeletConfigFetcher.Run(ctx)
 
 	if a.enableMetricsFetcher {
 		go a.MetricsFetcher.Run(ctx)
