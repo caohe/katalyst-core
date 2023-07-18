@@ -56,7 +56,7 @@ func (k *kubeletConfigFetcherImpl) GetKubeletConfig(ctx context.Context) (*kubel
 	}
 	configz := configzWrapper{}
 
-	if err := process.GetAndUnmarshalForHttps(ctx, k.conf.KubeletSecurePort, k.conf.KubeletConfigURI, k.conf.APIAuthTokenFile, &configz); err != nil {
+	if err := process.GetAndUnmarshalForHttps(ctx, k.conf.KubeletSecurePort, k.conf.NodeAddress, k.conf.KubeletConfigEndpoint, k.conf.APIAuthTokenFile, &configz); err != nil {
 		return nil, fmt.Errorf("failed to get kubelet config, error: %v", err)
 	}
 

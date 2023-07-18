@@ -37,7 +37,7 @@ type MetaServerConfiguration struct {
 	KubeletPodCacheSyncPeriod    time.Duration
 	KubeletPodCacheSyncMaxRate   rate.Limit
 	KubeletPodCacheSyncBurstBulk int
-	KubeletConfigURI             string
+	KubeletConfigEndpoint        string
 	APIAuthTokenFile             string
 	KubeletConfigCacheSyncPeriod time.Duration
 
