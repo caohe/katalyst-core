@@ -447,7 +447,6 @@ type reader interface {
 	GetMachineState() NUMANodeMap
 	GetPodEntries() PodEntries
 	GetAllocationInfo(podUID string, containerName string) *AllocationInfo
-	GetCPUSetOrDefault(podUID string, containerName string) machine.CPUSet
 }
 
 // writer is used to store information into local states,
