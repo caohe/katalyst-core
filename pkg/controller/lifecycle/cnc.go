@@ -294,18 +294,27 @@ func (cl *CNCLifecycle) clearUnexpectedCNC() {
 
 func (cl *CNCLifecycle) updateOrCreateCNC(node *corev1.Node) error {
 	cnc, err := cl.cncLister.Get(node.Name)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get cnc from lister %s: %v", node.Name, err)
+	}
 	if errors.IsNotFound(err) {
-		cnc = &apis.CustomNodeConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   node.Name,
-				Labels: node.Labels,
-			},
+		cnc, err = cl.client.InternalClient.ConfigV1alpha1().CustomNodeConfigs().Get(cl.ctx, node.Name, metav1.GetOptions{ResourceVersion: "0"})
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get cnc from apiserver %s: %v", node.Name, err)
 		}
+		if errors.IsNotFound(err) {
+			cnc = &apis.CustomNodeConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   node.Name,
+					Labels: node.Labels,
+				},
+			}
 
-		setCNCOwnerReference(cnc, node)
-		_, err = cl.cncControl.CreateCNC(cl.ctx, cnc, metav1.CreateOptions{})
-		if err != nil && !errors.IsAlreadyExists(err) {
-			return fmt.Errorf("failed to create cnc %s: %v", cnc.Name, err)
+			setCNCOwnerReference(cnc, node)
+			_, err = cl.cncControl.CreateCNC(cl.ctx, cnc, metav1.CreateOptions{})
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create cnc %s: %v", cnc.Name, err)
+			}
 		}
 	}
 
