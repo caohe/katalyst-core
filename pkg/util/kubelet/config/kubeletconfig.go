@@ -23,6 +23,7 @@ import (
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/pkg/features"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 
 	"github.com/kubewharf/katalyst-api/pkg/consts"
 )
@@ -41,7 +42,7 @@ func CheckFeatureGateEnable(kubeletConfig *kubeletconfigv1beta1.KubeletConfigura
 }
 
 // GetReservedQuantity the quantity for reserved resources defined in KubeletConfiguration
-func GetReservedQuantity(kubeletConfig *kubeletconfigv1beta1.KubeletConfiguration, resourceName string) (resource.Quantity, bool, error) {
+func GetReservedQuantity(kubeletConfig *kubeletconfig.KubeletConfiguration, resourceName string) (resource.Quantity, bool, error) {
 	if kubeletConfig == nil {
 		return resource.MustParse("0"), false, fmt.Errorf("nil KubeletConfiguration")
 	}
@@ -73,7 +74,7 @@ func GetReservedQuantity(kubeletConfig *kubeletconfigv1beta1.KubeletConfiguratio
 
 // GetInTreeProviderPolicies returns a map containing the policy for in-tree
 // topology-hint-provider, i.e. cpu-manager && memory-manager
-func GetInTreeProviderPolicies(kubeletConfig *kubeletconfigv1beta1.KubeletConfiguration) (map[string]string, error) {
+func GetInTreeProviderPolicies(kubeletConfig *kubeletconfig.KubeletConfiguration) (map[string]string, error) {
 	if kubeletConfig == nil {
 		return map[string]string{}, fmt.Errorf("nil KubeletConfiguration")
 	}

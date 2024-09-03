@@ -19,11 +19,11 @@ package kubeletconfig
 import (
 	"context"
 
-	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 )
 
 // NewFakeKubeletConfigFetcher returns a fakeKubeletConfigFetcherImpl.
-func NewFakeKubeletConfigFetcher(kubeletConfig kubeletconfigv1beta1.KubeletConfiguration) KubeletConfigFetcher {
+func NewFakeKubeletConfigFetcher(kubeletConfig kubeletconfig.KubeletConfiguration) KubeletConfigFetcher {
 	return &fakeKubeletConfigFetcherImpl{
 		kubeletConfig: kubeletConfig,
 	}
@@ -31,10 +31,10 @@ func NewFakeKubeletConfigFetcher(kubeletConfig kubeletconfigv1beta1.KubeletConfi
 
 // fakeKubeletConfigFetcherImpl returns a fake kubelet config.
 type fakeKubeletConfigFetcherImpl struct {
-	kubeletConfig kubeletconfigv1beta1.KubeletConfiguration
+	kubeletConfig kubeletconfig.KubeletConfiguration
 }
 
 // GetKubeletConfig returns a fake kubelet config.
-func (f *fakeKubeletConfigFetcherImpl) GetKubeletConfig(_ context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+func (f *fakeKubeletConfigFetcherImpl) GetKubeletConfig(_ context.Context) (*kubeletconfig.KubeletConfiguration, error) {
 	return &f.kubeletConfig, nil
 }

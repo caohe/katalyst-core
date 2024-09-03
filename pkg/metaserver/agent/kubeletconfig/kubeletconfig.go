@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 
 	"github.com/kubewharf/katalyst-core/pkg/config/agent/global"
 	"github.com/kubewharf/katalyst-core/pkg/metrics"
@@ -30,7 +30,7 @@ import (
 // KubeletConfigFetcher is used to get the configuration of kubelet.
 type KubeletConfigFetcher interface {
 	// GetKubeletConfig returns the configuration of kubelet.
-	GetKubeletConfig(ctx context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error)
+	GetKubeletConfig(ctx context.Context) (*kubeletconfig.KubeletConfiguration, error)
 }
 
 // NewKubeletConfigFetcher returns a KubeletConfigFetcher
@@ -48,20 +48,17 @@ type kubeletConfigFetcherImpl struct {
 }
 
 // GetKubeletConfig gets kubelet config from kubelet 10250/configz api
-func (k *kubeletConfigFetcherImpl) GetKubeletConfig(ctx context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+func (k *kubeletConfigFetcherImpl) GetKubeletConfig(ctx context.Context) (*kubeletconfig.KubeletConfiguration, error) {
 	if !k.baseConf.KubeletSecurePortEnabled {
 		return nil, fmt.Errorf("it is not enabled to get contents from kubelet secure port")
 	}
 
-	type configzWrapper struct {
-		ComponentConfig kubeletconfigv1beta1.KubeletConfiguration `json:"kubeletconfig"`
-	}
-	configz := configzWrapper{}
+	klConfig := &kubeletconfig.KubeletConfiguration{}
 
-	if err := native.GetAndUnmarshalForHttps(ctx, k.baseConf.KubeletSecurePort, k.baseConf.NodeAddress,
-		k.baseConf.KubeletConfigEndpoint, k.baseConf.APIAuthTokenFile, &configz); err != nil {
+	if err := native.GetAndDecodeForHttps(ctx, k.baseConf.KubeletSecurePort, k.baseConf.NodeAddress,
+		k.baseConf.KubeletConfigEndpoint, k.baseConf.APIAuthTokenFile, klConfig); err != nil {
 		return nil, fmt.Errorf("failed to get kubelet config, error: %v", err)
 	}
 
-	return &configz.ComponentConfig, nil
+	return klConfig, nil
 }

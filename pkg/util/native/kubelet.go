@@ -24,8 +24,11 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
+	kubeletscheme "k8s.io/kubernetes/pkg/kubelet/apis/config/scheme"
+	utilcodec "k8s.io/kubernetes/pkg/kubelet/kubeletconfig/util/codec"
 )
 
 const (
@@ -34,25 +37,7 @@ const (
 
 // GetAndUnmarshalForHttps gets data from the given url and unmarshal it into the given struct.
 func GetAndUnmarshalForHttps(ctx context.Context, port int, nodeAddress, endpoint, authTokenFile string, v interface{}) error {
-	uri, err := generateURI(port, nodeAddress, endpoint)
-	if err != nil {
-		return err
-	}
-	restConfig, err := insecureConfig(uri, authTokenFile)
-	if err != nil {
-		return fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
-	}
-
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := discoveryClient.RESTClient().
-		Get().
-		Timeout(defaultTimeout).
-		Do(ctx).
-		Raw()
+	bytes, err := getRespForHttps(ctx, port, nodeAddress, endpoint, authTokenFile)
 	if err != nil {
 		return err
 	}
@@ -62,6 +47,57 @@ func GetAndUnmarshalForHttps(ctx context.Context, port int, nodeAddress, endpoin
 	}
 
 	return nil
+}
+
+// GetAndDecodeForHttps gets data from the given url and decode it into the given struct.
+func GetAndDecodeForHttps(ctx context.Context, port int, nodeAddress, endpoint, authTokenFile string,
+	v interface{}) error {
+	bytes, err := getRespForHttps(ctx, port, nodeAddress, endpoint, authTokenFile)
+	if err != nil {
+		return err
+	}
+
+	_, kubeletCodecs, err := kubeletscheme.NewSchemeAndCodecs(serializer.EnableStrict)
+	if err != nil {
+		return err
+	}
+
+	kc, err := utilcodec.DecodeKubeletConfiguration(kubeletCodecs, bytes)
+	if err != nil {
+		return err
+	}
+
+	v = &kc
+
+	return nil
+}
+
+// getRespForHttps gets data from the given url.
+func getRespForHttps(ctx context.Context, port int, nodeAddress, endpoint, authTokenFile string) ([]byte, error) {
+	uri, err := generateURI(port, nodeAddress, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	restConfig, err := insecureConfig(uri, authTokenFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := discoveryClient.RESTClient().
+		Get().
+		Timeout(defaultTimeout).
+		Do(ctx).
+		Raw()
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
 
 func generateURI(port int, nodeAddress, endpoint string) (string, error) {
